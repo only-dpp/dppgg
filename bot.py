@@ -8,6 +8,9 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote
 import time
 import re
+import logging
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -21,31 +24,26 @@ cache = {}
 user_history = {}
 
 def rank_color(rank_name):
-    if not rank_name:  # Verifica se rank_name é None ou vazio
+    if not rank_name:
         return discord.Color.default()
-    
+
     rank_name = rank_name.lower()
-    if "challenger" in rank_name:
-        return discord.Color.dark_red()
-    elif "grandmaster" in rank_name:
-        return discord.Color.red()
-    elif "master" in rank_name:
-        return discord.Color.dark_magenta()
-    elif "diamond" in rank_name:
-        return discord.Color.blue()
-    elif "platinum" in rank_name:
-        return discord.Color.teal()
-    elif "gold" in rank_name:
-        return discord.Color.gold()
-    elif "silver" in rank_name:
-        return discord.Color.light_grey()
-    elif "bronze" in rank_name:
-        return discord.Color.dark_gold()
-    else:
-        return discord.Color.default()
+    color_map = {
+        "challenger": discord.Color.dark_red(),
+        "grandmaster": discord.Color.red(),
+        "master": discord.Color.dark_magenta(),
+        "diamond": discord.Color.blue(),
+        "platinum": discord.Color.teal(),
+        "gold": discord.Color.gold(),
+        "silver": discord.Color.light_grey(),
+        "bronze": discord.Color.dark_gold(),
+    }
 
-# --- Funções Assíncronas para Web Scraping ---
+    for key, color in color_map.items():
+        if key in rank_name:
+            return color
 
+    return discord.Color.default()
 
 
 
@@ -57,9 +55,9 @@ async def get_patch_details_async(patch_url):
     """
     headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Accept-Language": "en-US,en;q=0.9", # Adiciona um cabeçalho de linguagem
+    "Accept-Language": "en-US,en;q=0.9", 
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-    "Referer": "https://www.google.com/" # Pode ajudar, simulando que veio de uma busca
+    "Referer": "https://www.google.com/" 
 }
     try:
         async with aiohttp.ClientSession() as session:
@@ -111,9 +109,9 @@ async def get_latest_patch_note_with_skins_async():
     url = "https://www.leagueoflegends.com/pt-br/news/tags/patch-notes/"
     headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Accept-Language": "en-US,en;q=0.9", # Adiciona um cabeçalho de linguagem
+    "Accept-Language": "en-US,en;q=0.9", 
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-    "Referer": "https://www.google.com/" # Pode ajudar, simulando que veio de uma busca
+    "Referer": "https://www.google.com/" 
 }
     try:
         async with aiohttp.ClientSession() as session:
@@ -157,7 +155,7 @@ def get_next_match(soup, team_acronym):
     Retorna um dicionário com adversário e tipo de jogo.
     """
     next_match = None
-    match_rows = soup.find_all("tr")  # ou o elemento que contenha os blocos da tabela de partidas
+    match_rows = soup.find_all("tr")  
 
     for row in match_rows:
         left_team = row.find("td", class_="team-left")
@@ -187,7 +185,7 @@ def get_next_match(soup, team_acronym):
         break
 
     return next_match
-# --- Função de Scraping para Informações Detalhadas do Time ---
+
 async def get_team_full_info_async(team_name):
     """
     Busca informações detalhadas de um time (descrição, país, logo, e jogadores) na Liquipedia.
@@ -215,8 +213,6 @@ async def get_team_full_info_async(team_name):
                             return None
                         search_text = await search_response.text()
                         search_soup = BeautifulSoup(search_text, 'html.parser')
-                        # Encontrar o primeiro resultado que contenha "/leagueoflegends/"
-                        # e não seja uma página de torneio ou jogador
                         first_result_div = search_soup.find("div", class_="mw-search-result-heading")
                         if first_result_div:
                             link = first_result_div.find("a")
@@ -248,11 +244,9 @@ async def get_team_full_info_async(team_name):
                     "country": "País não encontrado.",
                     "logo_url": None,
                     "url": url,
-                    "players": [],  # Lista para armazenar os dados dos jogadores
                     "next_match": next_match or "Próxima partida não encontrada."
                 }
 
-                # --- Extrair descrição e país ---
                 team_description_p = None
                 for p_tag in soup.find_all("p"):
                     if p_tag.find("b") and team_name.lower() in p_tag.text.lower() and "is a" in p_tag.text.lower():
@@ -265,7 +259,6 @@ async def get_team_full_info_async(team_name):
                     if country_link:
                         team_data["country"] = country_link.get("title").replace("Category:", "").strip() # type: ignore
 
-                # --- Extrair logo ---
                 logo_div = soup.find("div", class_="team-template-logo") or soup.find("div", class_="infobox-image")
                 if logo_div:
                     img_tag = logo_div.find("img")
@@ -277,7 +270,6 @@ async def get_team_full_info_async(team_name):
                         else:
                             team_data["logo_url"] = img_tag['src']
                 
-                # --- NOVO: Extrair informações dos jogadores com a estrutura mais precisa ---
                 roster_table = soup.find("table", class_=lambda x: x and ("wikitable" in x and "roster-card" in x or "players-team-active" in x))
                 
                 if roster_table:
@@ -288,23 +280,20 @@ async def get_team_full_info_async(team_name):
 
                     for row in rows:
                         player_span = row.find("span", class_="inline-player")
-                        # Certifique-se de que a linha é de um jogador válido (tem um player_span)
                         if player_span:
                             player_info = {
                                 "tag": "N/A",
                                 "real_name": "N/A",
                                 "nationality": "N/A",
-                                "role": "N/A", # Adicionando 'role' aqui
+                                "role": "N/A", 
                                 "join_date": "N/A",
                                 "country_flag_url": None
                             }
 
-                            # Extrair o nickname do jogador
                             player_tag_a = player_span.find("a")
                             if player_tag_a:
                                 player_info["tag"] = player_tag_a.text.strip()
                             
-                            # Extrair a bandeira e nacionalidade
                             flag_span = player_span.find("span", class_="flag")
                             if flag_span:
                                 flag_img = flag_span.find("img")
@@ -319,15 +308,13 @@ async def get_team_full_info_async(team_name):
                                         else:
                                             player_info["country_flag_url"] = flag_img['src']
 
-                            # Tentar pegar as outras informações
                             cols = row.find_all(['td', 'th'])
                             
-                            # Nome Real (geralmente na terceira coluna, índice 2)
                             if len(cols) > 2:
                                 real_name_div = cols[2].find("div", class_="LargeStuff")
                                 if real_name_div:
                                     player_info["real_name"] = real_name_div.text.strip()
-                                else: # Fallback para a primeira div, caso LargeStuff não exista ou seja MobileStuff
+                                else: 
                                     mobile_name_div = cols[2].find("div", class_="MobileStuff")
                                     if mobile_name_div:
                                         match = re.search(r'\((.*?)\)', mobile_name_div.text.strip())
@@ -336,8 +323,6 @@ async def get_team_full_info_async(team_name):
                                         else:
                                             player_info["real_name"] = mobile_name_div.text.strip()
 
-                            # --- POSIÇÃO DO JOGADOR (NOVO) ---
-                            # A coluna da posição geralmente é a quarta (índice 3)
                             if len(cols) > 3:
                                 position_td = cols[3]
                                 position_text_parts = []
@@ -348,7 +333,6 @@ async def get_team_full_info_async(team_name):
                                         position_text_parts.append(elem.get_text(strip=True))
                                 player_info["role"] = " ".join(part for part in position_text_parts if part).strip()
 
-                            # Data de Entrada (geralmente na quinta coluna, índice 4)
                             if len(cols) > 4:
                                 join_date_i = cols[4].find("i")
                                 if join_date_i:
@@ -384,7 +368,6 @@ async def get_league_of_graphs_profile_async(summoner_name, region="br"):
                 text = await response.text()
                 soup = BeautifulSoup(text, 'html.parser')
 
-                # Buscar nome do invocador
                 txt_div = soup.find("div", class_="txt")
                 name = None
                 if txt_div:
@@ -393,7 +376,6 @@ async def get_league_of_graphs_profile_async(summoner_name, region="br"):
                         name = name_tag.text.strip()
                 name = name or "Nome não encontrado"
 
-                # Buscar nível
                 level_div = txt_div.find("div", class_="bannerSubtitle") if txt_div else None
                 level = None
                 if level_div:
@@ -403,11 +385,9 @@ async def get_league_of_graphs_profile_async(summoner_name, region="br"):
                         level = match.group(1)
                 level = level or "Nível não encontrado"
 
-                # Buscar rank
                 rank_div = soup.find("div", class_="leagueTier")
                 rank = rank_div.text.strip() if rank_div else "Rank não encontrado"
 
-                # Buscar LP
                 lp_div = soup.find("div", class_="league-points")
                 lp = None
                 if lp_div:
@@ -416,7 +396,6 @@ async def get_league_of_graphs_profile_async(summoner_name, region="br"):
                         lp = lp_span.text.strip()
                 lp = lp or "LP não encontrado"
 
-                # Buscar vitórias e derrotas
                 wins_losses_div = soup.find("div", class_="winslosses")
                 wins = 0
                 losses = 0
@@ -430,7 +409,6 @@ async def get_league_of_graphs_profile_async(summoner_name, region="br"):
                         total_games = wins + losses
                         winrate = f"{(wins / total_games) * 100:.2f}%" if total_games > 0 else "0%"
 
-                # Buscar foto de perfil
                 profile_img_div = soup.find("div", class_="img")
                 profile_img = None
                 if profile_img_div:
@@ -438,7 +416,6 @@ async def get_league_of_graphs_profile_async(summoner_name, region="br"):
                     if img_tag and img_tag.get("src"):
                         profile_img = "https:" + img_tag["src"]
 
-                # Buscar foto do rank
                 rank_img_div = soup.find("div", class_="best-league__inner img-align-block")
                 rank_img = None
                 if rank_img_div:
@@ -447,30 +424,23 @@ async def get_league_of_graphs_profile_async(summoner_name, region="br"):
                         rank_img = "https:" + img_tag["src"]
                 
                 last_matches = []
-                # Seleciona as células de resultado (geralmente uma <td> por partida)
                 cells = soup.select("td.resultCellLight.text-center")[:5]
                 for cell in cells:
-                    # Vitória ou Derrota
                     vd = cell.select_one("div.victoryDefeatText")
                     result = vd.text.strip() if vd else "–"
-                    # Modo de jogo
                     mode = cell.select_one("div.gameMode")
                     mode = mode['tooltip'].strip() if mode and mode.has_attr("tooltip") else mode.text.strip() if mode else "–"
-                    # Data da partida
                     date = cell.select_one("div.gameDate")
                     date = date.text.strip() if date else "–"
-                    # Duração
                     duration = cell.select_one("div.gameDuration")
                     duration = duration.text.strip() if duration else "–"
-                    # Imagem ou texto de mudança de LP (opcional)
                     lp_change_img = cell.select_one("div.lpChange img")
                     lp_change = lp_change_img['alt'].strip() if lp_change_img else "–"
 
-                    # Extrair KDA de outra página
                     kda_link = cell.select_one("a.display-block")
                     if kda_link and kda_link.get("href"):
                         match_url = f"https://www.leagueofgraphs.com{kda_link['href']}"
-                        participant_id = kda_link['href'].split("-")[-1]  # Alterado de "#" para "-"
+                        participant_id = kda_link['href'].split("-")[-1]  
                         try:
                             async with aiohttp.ClientSession() as session:
                                 async with session.get(match_url, headers=headers) as match_response:
@@ -478,25 +448,22 @@ async def get_league_of_graphs_profile_async(summoner_name, region="br"):
                                         match_text = await match_response.text()
                                         match_soup = BeautifulSoup(match_text, 'html.parser')
 
-                                        # Procurar o jogador correto pelo nome
                                         player_rows = match_soup.select("tr.playerRow")
                                         participant_div = None
 
                                         for row in player_rows:
-                                            # Verificar todas as <td> dentro da <tr>
                                             td_elements = row.select("td")
                                             for td in td_elements:
                                                 name_div = td.select_one("div.name")
                                                 if name_div:
                                                     player_name = name_div.text.strip()
                                                     if summoner_name.replace("-", "#").lower() == player_name.lower():
-                                                        participant_div = td  # Capturar a <td> correta
+                                                        participant_div = td  
                                                         break
                                             if participant_div:
                                                 break
 
                                         if participant_div:
-                                            # Extrair o KDA do jogador
                                             kda_div = participant_div.select_one("div.show-for-small-down")
                                             if kda_div:
                                                 kills = kda_div.select_one("span.kills").text.strip() if kda_div.select_one("span.kills") else "0"
@@ -506,7 +473,6 @@ async def get_league_of_graphs_profile_async(summoner_name, region="br"):
                                             else:
                                                 kda = "KDA não disponível"
 
-                                            # Extrair o campeão do jogador
                                             champion_div = participant_div.select_one("div.relative img")
                                             if champion_div and champion_div.get("alt"):
                                                 champion = champion_div["alt"].strip()
@@ -524,7 +490,6 @@ async def get_league_of_graphs_profile_async(summoner_name, region="br"):
                     else:
                         kda = "KDA não disponível"
 
-                    # Adicionar os dados da partida à lista
                     last_matches.append({
                         "result": result,
                         "mode": mode,
@@ -536,7 +501,6 @@ async def get_league_of_graphs_profile_async(summoner_name, region="br"):
                     })
                 
 
-                # Retornar os dados
                 return {
                     "name": name,
                     "level": level,
@@ -553,10 +517,10 @@ async def get_league_of_graphs_profile_async(summoner_name, region="br"):
     except Exception:
         return None
 
-# --- Comandos do Bot ---
 
 @tree.command(name="perfil", description="🔍 Buscar perfil do LoL no OP.GG e League of Graphs")
 @app_commands.describe(region="Região do servidor (ex: br, na, euw)", nickname_tag="Nome do invocador")
+@commands.cooldown(1, 10, commands.BucketType.user)
 async def perfil_command(interaction: discord.Interaction, region: str, nickname_tag: str):
     await interaction.response.defer()
 
@@ -584,18 +548,17 @@ async def perfil_command(interaction: discord.Interaction, region: str, nickname
     if league_of_graphs_data['profile_img']:
         embed.set_thumbnail(url=league_of_graphs_data['profile_img'])
 
-    # 🎮 Últimas partidas formatadas
     lm = league_of_graphs_data["last_matches"]
     if lm:
         text = ""
         for idx, m in enumerate(lm, start=1):
             lp_txt = m['lp_change'] if m['lp_change'] != "–" else "Nenhuma mudança"
             kda = m.get('kda', "KDA não disponível")
-            result_emoji = "✅" if "victory" in m['result'].lower() else "❌"  # Adiciona o emoji baseado no resultado
+            result_emoji = "✅" if "victory" in m['result'].lower() else "❌"  
             text += (
                 f"**Partida {idx}:**\n"
-                f"👻Campeão Usado: {m['champion']}\n"
-                f"{result_emoji} {m['result']} | 🗓️ {m['date']} | 🕹️ {m['mode']}\n"
+                f"👻Campeão Usado: `{m['champion']}`\n"
+                f"{result_emoji} {m['result']}: `🗓️ {m['date']} | 🕹️ {m['mode']}`\n"
                 f"⏱️ Duração: `{m['duration']}` |\n"
                 f"💰 KDA: `{kda}`\n"
             )
@@ -614,6 +577,7 @@ async def perfil_command(interaction: discord.Interaction, region: str, nickname
     await interaction.followup.send(embed=embed)
 
 @tree.command(name="ajuda", description="📘 Lista de comandos disponíveis")
+@commands.cooldown(1, 10, commands.BucketType.user)
 async def ajuda_command(interaction: discord.Interaction):
     embed = discord.Embed(
         title="📖 Comandos do Dpp.gg",
@@ -623,13 +587,7 @@ async def ajuda_command(interaction: discord.Interaction):
 
     embed.add_field(
         name="/perfil",
-        value="🔍 Busca o perfil de um invocador no OP.GG.\nExemplo: `/perfil region:br nickname_tag:Hide on bush#KR1`",
-        inline=False
-    )
-
-    embed.add_field(
-        name="/ultimos",
-        value="📚 Mostra os últimos perfis que você pesquisou.",
+        value="🔍 Busca o perfil de um invocador.\nExemplo: `/perfil region:br nickname:Hide on bush#KR1`",
         inline=False
     )
 
@@ -655,6 +613,7 @@ async def ajuda_command(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
 @tree.command(name="patch", description="🛠️ Veja as últimas notas de atualização do LoL")
+@commands.cooldown(1, 10, commands.BucketType.user)
 async def patch_notes_command(interaction: discord.Interaction):
     await interaction.response.defer()
 
@@ -677,8 +636,8 @@ async def patch_notes_command(interaction: discord.Interaction):
 
     await interaction.followup.send(embed=embed)
 
-# --- Comando /time Aprimorado ---
 @tree.command(name="time", description="🏟️ Mostra informações detalhadas de um time de LoL profissional.")
+@commands.cooldown(1, 10, commands.BucketType.user)
 @app_commands.describe(team_name="Nome completo do time (ex: LOUD, T1, Gen.G)")
 async def team_full_info_command(interaction: discord.Interaction, team_name: str):
     await interaction.response.defer()
@@ -702,10 +661,8 @@ async def team_full_info_command(interaction: discord.Interaction, team_name: st
     embed.add_field(name="🌍 País de Origem", value=f"**{team_data['country']}**", inline=True)
     embed.add_field(name="🔗 Página na Liquipedia", value=f"[Acessar]({team_data['url']})", inline=False)
 
-    # Adicionar os jogadores em um campo
     players_text = ""
     for player in team_data["players"]:
-        # Otimizado para usar as informações mais precisas e com fallbacks
         players_text += (
             f"**{player.get('tag', 'N/A')}** ({player.get('role', 'N/A')})\n"
             f"  • Nome Real: {player.get('real_name', 'N/A')}\n"
@@ -714,7 +671,6 @@ async def team_full_info_command(interaction: discord.Interaction, team_name: st
         )
     
     if players_text:
-        # Divide o texto dos jogadores em campos menores se for muito longo
         chunks = [players_text[i:i+1000] for i in range(0, len(players_text), 1000)]
         for i, chunk in enumerate(chunks):
             embed.add_field(name=f"Jogadores Ativos{' (continuação)' if i > 0 else ''}", value=chunk, inline=False)
@@ -724,8 +680,32 @@ async def team_full_info_command(interaction: discord.Interaction, team_name: st
     embed.set_footer(text="Fonte: Liquipedia League of Legends | Dpp.gg")
     await interaction.followup.send(embed=embed)
 
+logging.basicConfig(
+    filename="bot_usage.log",  
+    level=logging.INFO,  
+    format="%(asctime)s - %(levelname)s - %(message)s",  
+    datefmt="%Y-%m-%d %H:%M:%S"  
+)
+
 
 @bot.event
+async def on_interaction(interaction: discord.Interaction):
+    if interaction.command:  
+        guild_name = interaction.guild.name if interaction.guild else "DM"
+        channel_name = interaction.channel.name if interaction.guild else "DM"  
+        user = interaction.user 
+        command = interaction.command.name  
+
+        logging.info(f"Comando '/{command}' usado por {user} no servidor '{guild_name}' (canal: {channel_name})")
+
+        print(f"[LOG] Comando '/{command}' usado por {user} no servidor '{guild_name}' (canal: {channel_name})")
+        logging.basicConfig(
+    filename='bot_usage.log', 
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    encoding='utf-8',  
+)
 async def on_ready():
     await tree.sync()
 bot.run(DISCORD_TOKEN)
