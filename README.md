@@ -49,11 +49,4 @@ A complete Discord bot focused on League of Legends, offering useful features fo
 - `BeautifulSoup` for web scraping
 - Slash commands via `discord.app_commands`
 
-### 💻 How to run
 
-```bash
-git clone https://github.com/only-dpp/dpp.gg.git
-cd dpp.gg
-pip install -r requirements.txt
-cp .env.example .env  # Add your bot token here
-python bot.py
