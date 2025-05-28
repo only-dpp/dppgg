@@ -25,7 +25,7 @@ Um bot completo para Discord focado em League of Legends, com funcionalidades ú
 ### 💻 Como rodar
 
 ```bash
-git clone https://github.com/only-dpp/dppgg.git
+git clone https://github.com/only-dpp/dpp.gg.git
 cd dppgg
 pip install -r requirements.txt
 cp .env.example .env  # Coloque seu token do bot aqui
