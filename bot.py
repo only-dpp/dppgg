@@ -4,6 +4,10 @@ from discord import app_commands, Embed, interactions
 from dotenv import load_dotenv
 import os
 import aiohttp
+import json
+import atexit
+
+FOOTER_TEXT = "Fonte: Liquipedia League of Legends | Dpp.gg"
 from bs4 import BeautifulSoup
 from urllib.parse import quote
 import time
@@ -29,14 +33,15 @@ def rank_color(rank_name):
 
     rank_name = rank_name.lower()
     color_map = {
-        "challenger": discord.Color.dark_red(),
-        "grandmaster": discord.Color.red(),
-        "master": discord.Color.dark_magenta(),
-        "diamond": discord.Color.blue(),
-        "platinum": discord.Color.teal(),
+        "challenger": discord.Color.from_rgb(85, 170, 255),
+        "grandmaster": discord.Color.from_rgb(200, 20, 20),
+        "master": discord.Color.purple(),
+        "diamond": discord.Color.from_rgb(115, 255, 255),
+        "platinum": discord.Color.from_rgb(25, 220, 160),
         "gold": discord.Color.gold(),
         "silver": discord.Color.light_grey(),
-        "bronze": discord.Color.dark_gold(),
+        "bronze": discord.Color.from_rgb(120, 72, 36),
+        "iron": discord.Color.darker_grey(),
     }
 
     for key, color in color_map.items():
@@ -394,12 +399,12 @@ async def get_league_of_graphs_profile_async(summoner_name, region="br"):
                     lp_span = lp_div.find("span", class_="leaguePoints")
                     if lp_span:
                         lp = lp_span.text.strip()
-                lp = lp or "LP não encontrado"
+                lp = lp or "Classificação média dos inimigos"
 
                 wins_losses_div = soup.find("div", class_="winslosses")
                 wins = 0
                 losses = 0
-                winrate = "Win Rate não encontrado"
+                winrate = "Unranked"
                 if wins_losses_div:
                     wins_span = wins_losses_div.find("span", class_="winsNumber")
                     losses_span = wins_losses_div.find("span", class_="lossesNumber")
@@ -518,22 +523,17 @@ async def get_league_of_graphs_profile_async(summoner_name, region="br"):
         return None
 
 
-@tree.command(name="perfil", description="🔍 Buscar perfil do LoL no OP.GG e League of Graphs")
+@tree.command(name="perfil", description="🔍 Buscar perfil do LoL no League of Graphs")
 @app_commands.describe(region="Região do servidor (ex: br, na, euw)", nickname_tag="Nome do invocador")
-@commands.cooldown(1, 10, commands.BucketType.user)
 async def perfil_command(interaction: discord.Interaction, region: str, nickname_tag: str):
     await interaction.response.defer()
 
     nickname_tag = nickname_tag.replace("#", "-")
-    
     league_of_graphs_data = await get_league_of_graphs_profile_async(nickname_tag, region)
     
     if not league_of_graphs_data:
-        await interaction.followup.send(f"❌ Invocador '{nickname_tag}' não encontrado ou erro ao acessar o League of Graphs. Tente novamente mais tarde.")
+        await interaction.followup.send(f"❌ Desculpe, não encontrei o '{nickname_tag}', você digitou o nome correto? Verifique se o invocador existe na região `{region}`.", ephemeral=True)
         return
-
-    uid = str(interaction.user.id)
-    user_history.setdefault(uid, []).append(nickname_tag)
 
     color = rank_color(league_of_graphs_data['rank'])
     url = f"https://www.leagueofgraphs.com/summoner/{region}/{quote(league_of_graphs_data['name'])}#championsData-all"
@@ -570,14 +570,13 @@ async def perfil_command(interaction: discord.Interaction, region: str, nickname
         inline=True
     )
     embed.add_field(name="📊 Win Rate", value=f"{league_of_graphs_data['winrate']}", inline=True)
-    embed.add_field(name="📅 Últimos 3 Jogos", value=text or "Não foi possível recuperar partidas.", inline=False)
+    embed.add_field(name="📅 Últimos 5 Jogos", value=text or "Não foi possível recuperar partidas.", inline=False)
 
     embed.set_footer(text="🔹 Desenvolvido com ❤️ por Dopplin_", icon_url="https://i.imgur.com/VIRt7Cj.png")
 
     await interaction.followup.send(embed=embed)
 
 @tree.command(name="ajuda", description="📘 Lista de comandos disponíveis")
-@commands.cooldown(1, 10, commands.BucketType.user)
 async def ajuda_command(interaction: discord.Interaction):
     embed = discord.Embed(
         title="📖 Comandos do Dpp.gg",
@@ -609,11 +608,28 @@ async def ajuda_command(interaction: discord.Interaction):
         inline=False
     )
 
+    embed.add_field(
+            name="/user",
+            value="👤 Busca o perfil de um invocador vinculado a um usuário do Discord.\nExemplo: `/user @Dopplin_`",
+        inline=False
+    )
+
+    embed.add_field(
+        name="/vincular",
+        value="🔗 Vincula sua conta do Discord a um perfil do LoL.\nExemplo: `/vincular region:br nickname:Hide on bush#KR1`",
+        inline=False
+    )
+
+    embed.add_field(
+        name="/desvincular",
+        value="❌ Remove a vinculação da sua conta do Discord.",
+        inline=False
+    )
+
     embed.set_footer(text="Feito com ❤️ por Dopplin_")
     await interaction.response.send_message(embed=embed)
 
 @tree.command(name="patch", description="🛠️ Veja as últimas notas de atualização do LoL")
-@commands.cooldown(1, 10, commands.BucketType.user)
 async def patch_notes_command(interaction: discord.Interaction):
     await interaction.response.defer()
 
@@ -637,7 +653,6 @@ async def patch_notes_command(interaction: discord.Interaction):
     await interaction.followup.send(embed=embed)
 
 @tree.command(name="time", description="🏟️ Mostra informações detalhadas de um time de LoL profissional.")
-@commands.cooldown(1, 10, commands.BucketType.user)
 @app_commands.describe(team_name="Nome completo do time (ex: LOUD, T1, Gen.G)")
 async def team_full_info_command(interaction: discord.Interaction, team_name: str):
     await interaction.response.defer()
@@ -677,8 +692,115 @@ async def team_full_info_command(interaction: discord.Interaction, team_name: st
     else:
         embed.add_field(name="Jogadores Ativos", value="Nenhum jogador encontrado ou a estrutura da página mudou.", inline=False)
 
-    embed.set_footer(text="Fonte: Liquipedia League of Legends | Dpp.gg")
+    embed.set_footer(text=FOOTER_TEXT)
     await interaction.followup.send(embed=embed)
+    
+
+@tree.command(name="vincular", description="🔗 Vincula sua conta do Discord a um perfil do League of Graphs.")
+@app_commands.describe(region="Região do servidor (ex: br, na, euw)", nickname_tag="Nome do invocador")
+async def vincular_command(interaction: discord.Interaction, region: str, nickname_tag: str):
+    user_id = str(interaction.user.id)
+    nickname_tag = nickname_tag.replace("#", "-")
+    
+    user_history[user_id] = {"region": region, "nickname": nickname_tag}
+    save_user_history() 
+    
+    await interaction.response.send_message(f"✅ Sua conta foi vinculada ao invocador `{nickname_tag}` na região `{region}`.", ephemeral=True)
+
+@tree.command(name="user", description="👤 Busca o perfil de um invocador vinculado a um usuário do Discord.")
+@app_commands.describe(discord_user="Usuário do Discord (mencione ou digite o nome)")
+async def user_command(interaction: discord.Interaction, discord_user: discord.Member):
+    try:
+        await interaction.response.defer()
+
+        user_id = str(discord_user.id)
+        
+        if user_id not in user_history:
+            await interaction.followup.send(f"❌ O usuário {discord_user.mention} não vinculou uma conta ainda.", ephemeral=True)
+            return
+        
+        linked_data = user_history[user_id]
+        region = linked_data["region"]
+        nickname = linked_data["nickname"]
+        
+        league_of_graphs_data = await get_league_of_graphs_profile_async(nickname, region)
+        
+        if not league_of_graphs_data:
+            await interaction.followup.send(f"❌ Não foi possível encontrar o perfil do invocador `{nickname}` na região `{region}`.", ephemeral=True)
+            return
+        
+        color = rank_color(league_of_graphs_data['rank'])
+        url = f"https://www.leagueofgraphs.com/summoner/{region}/{quote(league_of_graphs_data['name'])}#championsData-all"
+
+        embed = discord.Embed(
+            title=f"👤 {league_of_graphs_data['name']}",
+            url=url,
+            color=color,
+            description=f"🔍 Estatísticas de **{league_of_graphs_data['name']}** no servidor."
+        )
+
+        if league_of_graphs_data['profile_img']:
+            embed.set_thumbnail(url=league_of_graphs_data['profile_img'])
+
+        lm = league_of_graphs_data["last_matches"]
+        if lm:
+            text = ""
+            for idx, m in enumerate(lm, start=1):
+                lp_txt = m['lp_change'] if m['lp_change'] != "–" else "Nenhuma mudança"
+                kda = m.get('kda', "KDA não disponível")
+                result_emoji = "✅" if "victory" in m['result'].lower() else "❌"  
+                text += (
+                    f"**Partida {idx}:**\n"
+                    f"👻Campeão Usado: `{m['champion']}`\n"
+                    f"{result_emoji} {m['result']}: `🗓️ {m['date']} | 🕹️ {m['mode']}`\n"
+                    f"⏱️ Duração: `{m['duration']}` |\n"
+                    f"💰 KDA: `{kda}`\n"
+                )
+
+        embed.add_field(name="🎮 Nível", value=f"**{league_of_graphs_data['level']}**", inline=True)
+        embed.add_field(
+            name="🏆 Rank",
+            value=f"**{league_of_graphs_data.get('rank', 'Unranked')}** ({league_of_graphs_data.get('lp', 'Unranked')} PDL)",  
+            inline=True
+        )
+        embed.add_field(name="📊 Win Rate", value=f"{league_of_graphs_data['winrate']}", inline=True)
+        embed.add_field(name="📅 Últimos 5 Jogos", value=text or "Não foi possível recuperar partidas.", inline=False)
+
+        embed.set_footer(text="🔹 Desenvolvido com ❤️ por Dopplin_", icon_url="https://i.imgur.com/VIRt7Cj.png")
+
+        await interaction.followup.send(embed=embed)
+    except Exception as e:
+        await interaction.followup.send(f"❌ Ocorreu um erro: {e}", ephemeral=True)
+
+@tree.command(name="desvincular", description="❌ Remove a vinculação da sua conta do Discord.")
+async def desvincular_command(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    
+    if user_id not in user_history:
+        await interaction.response.send_message("❌ Você não possui nenhuma conta vinculada.", ephemeral=True)
+        return
+    
+    del user_history[user_id]
+    save_user_history()   
+    
+    await interaction.response.send_message("✅ Sua conta foi desvinculada com sucesso.", ephemeral=True)
+
+def save_user_history():
+    with open("user_history.json", "w") as f:
+        json.dump(user_history, f)
+
+def load_user_history():
+    global user_history
+    try:
+        with open("user_history.json", "r") as f:
+            user_history = json.load(f)
+    except FileNotFoundError:
+        user_history = {}
+
+load_user_history()
+
+
+atexit.register(save_user_history)
 
 logging.basicConfig(
     filename="bot_usage.log",  
@@ -687,25 +809,16 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"  
 )
 
-
 @bot.event
-async def on_interaction(interaction: discord.Interaction):
-    if interaction.command:  
-        guild_name = interaction.guild.name if interaction.guild else "DM"
-        channel_name = interaction.channel.name if interaction.guild else "DM"  
-        user = interaction.user 
-        command = interaction.command.name  
-
-        logging.info(f"Comando '/{command}' usado por {user} no servidor '{guild_name}' (canal: {channel_name})")
-
-        print(f"[LOG] Comando '/{command}' usado por {user} no servidor '{guild_name}' (canal: {channel_name})")
-        logging.basicConfig(
-    filename='bot_usage.log', 
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-    encoding='utf-8',  
-)
 async def on_ready():
-    await tree.sync()
+    bot.loop.create_task(setup_sync())
+
+async def setup_sync():
+    await bot.wait_until_ready()
+    synced = await bot.tree.sync()
+    print(f" {len(synced)} comandos sincronizados no servidor com ID 1376806262527885352:")
+    for cmd in synced:
+        print(f" - /{cmd.name} → {cmd.description}")
+    print(" Código atualizado e rodando!")
+
 bot.run(DISCORD_TOKEN)
