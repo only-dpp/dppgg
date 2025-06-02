@@ -55,9 +55,6 @@ def rank_color(rank_name):
 
 
 async def get_patch_details_async(patch_url):
-    """
-    Busca detalhes de uma nota de patch de forma assíncrona.
-    """
     headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Accept-Language": "en-US,en;q=0.9", 
@@ -108,9 +105,6 @@ async def get_patch_details_async(patch_url):
 
 
 async def get_latest_patch_note_with_skins_async():
-    """
-    Busca a última nota de patch com skins de forma assíncrona.
-    """
     url = "https://www.leagueoflegends.com/pt-br/news/tags/patch-notes/"
     headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -192,9 +186,6 @@ def get_next_match(soup, team_acronym):
     return next_match
 
 async def get_team_full_info_async(team_name):
-    """
-    Busca informações detalhadas de um time (descrição, país, logo, e jogadores) na Liquipedia.
-    """
     base_url = "https://liquipedia.net/leagueoflegends/"
     team_formatted_name = team_name.replace(" ", "_")
     url = f"{base_url}{quote(team_formatted_name)}"
@@ -354,9 +345,6 @@ async def get_team_full_info_async(team_name):
         return None
 
 async def get_league_of_graphs_profile_async(summoner_name, region="br"):
-    """
-    Busca o perfil do invocador no League of Graphs de forma assíncrona.
-    """
     summoner_name_encoded = quote(summoner_name.replace(" ", "%20"))
     url = f"https://www.leagueofgraphs.com/summoner/{region}/{summoner_name_encoded}#championsData-all"
     headers = {
