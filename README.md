@@ -1,5 +1,5 @@
 # DPP.GG  Discord Bot for League of Legends
-
+https://user-images.githubusercontent.com/567298/166907630-cfd0760e-ddff-46b4-9b82-f163fb90f0ee.png
 Backend-oriented Discord bot built with Python and discord.py, designed to provide structured League of Legends data directly inside Discord.
 This project focuses on clean architecture, asynchronous programming, and modular design.
 
