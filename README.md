@@ -1,18 +1,15 @@
-# 🤖 Dpp.gg - Discord Bot for League of Legends
+# DPP.GG — Discord Bot for League of Legends
 
-Um bot completo para Discord focado em League of Legends, com funcionalidades úteis para jogadores e fãs do cenário competitivo.
+Backend-oriented Discord bot built with Python and discord.py, designed to provide structured League of Legends data directly inside Discord.
+This project focuses on clean architecture, asynchronous programming, and modular design.
 
 ---
 
-## 🇧🇷 Em Português
 
-### 🎯 Funcionalidades
+# OVERVIEW
 
-- 🔍 Buscar perfis de invocadores no [League of Graphs](https://www.leagueofgraphs.com/)
-- 🛠️ Acessar as últimas notas de atualização diretamente do site oficial do LoL
-- 🏟️ Obter informações detalhadas de times profissionais (jogadores, país, logo) via [Liquipedia](https://liquipedia.net/)
-- 🔗 Vincular perfis do LoL a usuários do Discord para consulta rápida
-- 📊 Visualizar estatísticas, partidas recentes, KDA, campeões usados e mais
+DPP.GG integrates external data sources to retrieve player statistics and patch information in real time.- 🛠️ Acessar as últimas notas de atualização diretamente do site oficial do LoL
+The project was structured with maintainability and scalability in mind, using clear separation between command layer, services, and utilities.
 
 ### 🧠 Tecnologias
 
