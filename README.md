@@ -1,5 +1,5 @@
 # DPP.GG  Discord Bot for League of Legends
-<img width="75" height="150" alt="image" src="https://github.com/user-attachments/assets/f61f9dc7-b2d0-4bed-86d6-fc6fe14196c5" /> <img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/bda1e390-7a00-44dc-bf3e-f0f82e293743" />
+<img width="150" height="75" alt="image" src="https://github.com/user-attachments/assets/f61f9dc7-b2d0-4bed-86d6-fc6fe14196c5" /> <img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/bda1e390-7a00-44dc-bf3e-f0f82e293743" />
 
 
 
