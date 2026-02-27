@@ -1,6 +1,6 @@
 # DPP.GG  Discord Bot for League of Legends
-<img width="150" height="75" alt="image" src="https://github.com/user-attachments/assets/f61f9dc7-b2d0-4bed-86d6-fc6fe14196c5" /> <img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/bda1e390-7a00-44dc-bf3e-f0f82e293743" />
-
+![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python&logoColor=white)
+![Discord](https://img.shields.io/badge/Discord-Bot-5865F2?logo=discord&logoColor=white)
 
 
 Backend-oriented Discord bot built with Python and discord.py, designed to provide structured League of Legends data directly inside Discord.
