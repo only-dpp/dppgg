@@ -37,7 +37,6 @@ The project was structured with maintainability and scalability in mind, using c
 #### 1 - Clone the repository
 ```bash
 pip install -r requirements.txt
-python bot.py
 ```
 #### 2 - Create virtual environment
 ```bash
