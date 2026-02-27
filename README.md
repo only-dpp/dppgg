@@ -17,7 +17,12 @@ The project was structured with maintainability and scalability in mind, using c
 - /ajuda → List available commands
 
 
-# PROJECT STRUCTURE
+# ARCHITECTURE PRINCIPLES
+- Modular design (Cogs pattern)
+- Separation of concerns
+- Asynchronous I/O
+- Environment-based configuration
+- Token isolation via `.env`
 
 dppgg/
 │
