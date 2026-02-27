@@ -34,24 +34,53 @@ The project was structured with maintainability and scalability in mind, using c
 - `python-dotenv`
 
 ### INSTALLATION
-#### Clone the repository
+#### 1 - Clone the repository
 ```bash
 pip install -r requirements.txt
 python bot.py
 ```
+#### 2 - Create virtual environment
+```bash
+python -m venv venv
+# No Windows:
+venv\Scripts\activate
+# No Linux/Mac:
+source venv/bin/activate
+```
 
-- 🔍 Search for summoner profiles on [League of Graphs](https://www.leagueofgraphs.com/)
-- 🛠️ Access the latest patch notes directly from the official League of Legends website
-- 🏟️ Get detailed information about pro teams (players, country, logo) via [Liquipedia](https://liquipedia.net/)
-- 🔗 Link League of Legends profiles to Discord users for quick access
-- 📊 View stats, recent matches, KDA, champions played, and more
+#### 3 - Install dependencies
+```bash
+pip install -r requirements.txt
+```
 
-### 🧠 Technologies
+#### 4 - Create .env file
+```bash
+DISCORD_TOKEN=YOUR_DISCORD_BOT_TOKEN
+```
 
-- Python 3.10+
-- [discord.py](https://discordpy.readthedocs.io/)
-- `aiohttp` for asynchronous requests
-- `BeautifulSoup` for web scraping
-- Slash commands via `discord.app_commands`
+#### 5 - Run the bot
+```bash
+python bot.py
+```
 
+### SECURITY
+- The Discord bot token is not stored in the repository.
+- `.env` is ignored via `.gitignore.`
+- Designed for safe deployment in VPS or cloud environments.
 
+### DEVELOPMENT FOCUS
+This project demonstrates:
+- Backend-focused Python development
+- Asynchronous programming
+- Clean project structuring
+- External data integration
+- Maintainable command architecture
+
+### FUTURE IMPROVEMENTS
+- Caching layer to reduce repeated external requests
+- Structured logging
+- Rate-limit handling improvements
+- Deployment automation
+
+### AUTHOR
+**Developed by Dopplin** Backend Developer focused on Python, APIs and automation systems.
