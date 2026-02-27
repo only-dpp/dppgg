@@ -6,26 +6,28 @@ This project focuses on clean architecture, asynchronous programming, and modula
 ---
 
 
-# OVERVIEW
+### OVERVIEW
 
 DPP.GG integrates external data sources to retrieve player statistics and patch information in real time.- 🛠️ Acessar as últimas notas de atualização diretamente do site oficial do LoL
 The project was structured with maintainability and scalability in mind, using clear separation between command layer, services, and utilities.
 
-### 🧠 Tecnologias
-
-- Python 3.10+
-- [discord.py](https://discordpy.readthedocs.io/)
-- `aiohttp` para requisições assíncronas
-- `BeautifulSoup` para scraping
-- Slash Commands via `discord.app_commands`
+### FEATURES
+- /perfil → Retrieve player statistics from League of Graphs
+- /patch → Fetch latest League of Legends patch notes
+- /ajuda → List available commands
 
 
+# PROJECT STRUCTURE
 
-
-# 🤖 Dpp.gg - Discord Bot for League of Legends
-
-A complete Discord bot focused on League of Legends, offering useful features for players and fans of the competitive scene.
-
+dppgg/
+│
+├── cogs/ (Command layer - Discord interactions)
+├── services/ (External data integration - scraping / APIs)
+├── utils/ (Shared helpers and utilities)
+├── config.py (Configuration management)
+├── bot.py (Application entry point)
+├── requirements.txt
+└── README.md
 ---
 
 ## 🇺🇸 In English
