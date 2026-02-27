@@ -12,9 +12,9 @@ DPP.GG integrates external data sources to retrieve player statistics and patch 
 The project was structured with maintainability and scalability in mind, using clear separation between command layer, services, and utilities.
 
 ### FEATURES
-- /perfil → Retrieve player statistics from League of Graphs
-- /patch → Fetch latest League of Legends patch notes
-- /ajuda → List available commands
+- `/perfil` → Retrieve player statistics from League of Graphs
+- `/patch` → Fetch latest League of Legends patch notes
+- `/ajuda` → List available commands
 
 
 # ARCHITECTURE PRINCIPLES
@@ -24,20 +24,21 @@ The project was structured with maintainability and scalability in mind, using c
 - Environment-based configuration
 - Token isolation via `.env`
 
-dppgg/
-│
-├── cogs/ (Command layer - Discord interactions)
-├── services/ (External data integration - scraping / APIs)
-├── utils/ (Shared helpers and utilities)
-├── config.py (Configuration management)
-├── bot.py (Application entry point)
-├── requirements.txt
-└── README.md
 ---
 
-## 🇺🇸 In English
+### TECHNOLOGIES
+- `Python 3.11+`
+- `discord.py 2.x`
+- `aiohttp`
+- `BeautifulSoup4`
+- `python-dotenv`
 
-### 🎯 Features
+### INSTALLATION
+#### Clone the repository
+```bash
+pip install -r requirements.txt
+python bot.py
+```
 
 - 🔍 Search for summoner profiles on [League of Graphs](https://www.leagueofgraphs.com/)
 - 🛠️ Access the latest patch notes directly from the official League of Legends website
