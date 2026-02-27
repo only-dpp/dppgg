@@ -36,7 +36,8 @@ The project was structured with maintainability and scalability in mind, using c
 ### INSTALLATION
 #### 1 - Clone the repository
 ```bash
-pip install -r requirements.txt
+git clone https://github.com/only-dpp/dppgg.git
+cd dppgg
 ```
 #### 2 - Create virtual environment
 ```bash
