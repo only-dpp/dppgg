@@ -11,7 +11,7 @@ This project focuses on clean architecture, asynchronous programming, and modula
 
 ### OVERVIEW
 
-DPP.GG integrates external data sources to retrieve player statistics and patch information in real time.- 🛠️ Acessar as últimas notas de atualização diretamente do site oficial do LoL
+DPP.GG integrates external data sources to retrieve player statistics and patch information in real time. Acessar as últimas notas de atualização diretamente do site oficial do LoL
 The project was structured with maintainability and scalability in mind, using clear separation between command layer, services, and utilities.
 
 ### FEATURES
